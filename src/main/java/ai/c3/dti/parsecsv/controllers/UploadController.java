@@ -90,7 +90,7 @@ public class UploadController {
 				System.out.println("completed parse.csvWriterAll(stringArray, \"out.csv\");");
 
 			} catch (InvalidFileException e) {
-				throw new RuntimeException("Sorry that is an invalid file",e);
+				throw new RuntimeException("Sorry that is an invalid file: "+e.getCause().getMessage(),e);
 			} 
 
 			model.addAttribute("status", "Successed");

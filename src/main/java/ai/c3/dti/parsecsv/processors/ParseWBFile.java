@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeMap;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
 import com.opencsv.exceptions.CsvValidationException;
@@ -20,16 +22,16 @@ public class ParseWBFile {
 	private Set<String> countries = new LinkedHashSet<String>();
 	private Set<String> indicatorCodes = new LinkedHashSet<String>();
 
-	public ArrayList<LineItem> createLineItems(Reader reader) throws InvalidFileException
-			 {
+	public ArrayList<LineItem> createLineItems(Reader reader) throws InvalidFileException {
 
 		ArrayList<LineItem> lines = new ArrayList<LineItem>();
-		
+
 		try {
 			LocationMappings locationMappings = new LocationMappings();
 
-
 			CSVReader csvReader = new CSVReader(reader);
+			
+			validateFile(csvReader);
 
 			String[] currentLine;
 
@@ -67,21 +69,43 @@ public class ParseWBFile {
 					countries.add(countryCode);
 					indicatorCodes.add(indicatorCode);
 
-				} 
+				}
 
 			}
 
 			csvReader.close();
-			
+
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw new InvalidFileException(e);
-		} 
+		}
 
 		return lines;
 
 	}
 
+	
+	public void validateFile(CSVReader csvReader) {
+		
+		try {
+			
+			String[] firstline = csvReader.peek();
+			
+			if(firstline.length < 3) throw new InvalidFileException("Must Start with \"Data Source\" and \"World Development Indicators\" on line 1" );
+			
+			String dataSource = (firstline[0]).replaceAll("\\p{C}", "");
+			String worldDevelopmentIndicators = firstline[1].replaceAll("\\p{C}", "");
+			
+			if(!"Data Source".equals(dataSource)) throw new InvalidFileException("Must Start with \"Data Source\" token" );
+			if(!"World Development Indicators".equals(worldDevelopmentIndicators)) throw new InvalidFileException("The file is not a World Bank dataset");
+			
+		} catch (Exception e) {
+			throw new InvalidFileException(e.getMessage(),e);
+		}
+		
+		
+	}
+	
 	public TreeMap<String, String> createMetrics(String[] currentLine) {
 
 		int startYear = 1960;
@@ -215,9 +239,9 @@ public class ParseWBFile {
 	public static void main(String[] args) {
 
 		ParseWBFile parse = new ParseWBFile();
-		
+
 		String fileName = "GlobalHealthDataset_Fadzi.csv";
-		//String fileName = "GlobalFinanceDataset_Fadzi.csv";
+		// String fileName = "GlobalFinanceDataset_Fadzi.csv";
 
 		try {
 
@@ -237,7 +261,7 @@ public class ParseWBFile {
 
 			parse.csvWriterAll(stringArray, fileName.concat("_PROCESSED.csv"));
 
-			System.out.println("completed parse.csvWriterAll .. "+fileName.concat("_PROCESSED.csv"));
+			System.out.println("completed parse.csvWriterAll .. " + fileName.concat("_PROCESSED.csv"));
 
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
