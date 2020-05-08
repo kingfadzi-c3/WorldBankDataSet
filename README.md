@@ -2,7 +2,7 @@
 
 Prereqs
 
-1. Ensure you have Java 8 installaed: `https://docs.oracle.com/javase/8/docs/technotes/guides/install/mac_jdk.html`
+1. Ensure you have Java 8 installed: `https://docs.oracle.com/javase/8/docs/technotes/guides/install/mac_jdk.html`
 
 To run:
 
