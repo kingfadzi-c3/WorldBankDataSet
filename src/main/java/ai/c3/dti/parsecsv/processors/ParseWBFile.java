@@ -4,7 +4,6 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Reader;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
@@ -21,56 +20,63 @@ public class ParseWBFile {
 	private Set<String> countries = new LinkedHashSet<String>();
 	private Set<String> indicatorCodes = new LinkedHashSet<String>();
 
-	public ArrayList<LineItem> createLineItems(Reader reader)
-			throws IOException, CsvValidationException, URISyntaxException {
-
-		LocationMappings locationMappings = new LocationMappings();
+	public ArrayList<LineItem> createLineItems(Reader reader) throws InvalidFileException
+			 {
 
 		ArrayList<LineItem> lines = new ArrayList<LineItem>();
+		
+		try {
+			LocationMappings locationMappings = new LocationMappings();
 
-		CSVReader csvReader = new CSVReader(reader);
 
-		String[] currentLine;
+			CSVReader csvReader = new CSVReader(reader);
 
-		int lineNumber = 0;
+			String[] currentLine;
 
-		while ((currentLine = csvReader.readNext()) != null) {
+			int lineNumber = 0;
 
-			lineNumber = lineNumber + 1;
+			while ((currentLine = csvReader.readNext()) != null) {
 
-			if (lineNumber > 5) {
+				lineNumber = lineNumber + 1;
 
-				LineItem lineItem = new LineItem();
+				if (lineNumber > 5) {
 
-				String countryName = currentLine[0];
-				String countryCode = currentLine[1];
-				String indicatorName = currentLine[2];
-				String indicatorCode = currentLine[3];
+					LineItem lineItem = new LineItem();
 
-				lineItem.setCountryName(countryName);
+					String countryName = currentLine[0];
+					String countryCode = currentLine[1];
+					String indicatorName = currentLine[2];
+					String indicatorCode = currentLine[3];
 
-				if (locationMappings.getLookupTable().containsKey(countryCode)) {
-					lineItem.setCountryName(locationMappings.getLookupTable().get(countryCode));
-				}
+					lineItem.setCountryName(countryName);
 
-				lineItem.setCountryCode(countryCode);
-				lineItem.setIndicatorName(indicatorName);
-				lineItem.setIndicatorCode(indicatorCode);
+					if (locationMappings.getLookupTable().containsKey(countryCode)) {
+						lineItem.setCountryName(locationMappings.getLookupTable().get(countryCode));
+					}
 
-				TreeMap<String, String> metrics = createMetrics(currentLine);
+					lineItem.setCountryCode(countryCode);
+					lineItem.setIndicatorName(indicatorName);
+					lineItem.setIndicatorCode(indicatorCode);
 
-				lineItem.setMetrics(metrics);
+					TreeMap<String, String> metrics = createMetrics(currentLine);
 
-				lines.add(lineItem);
+					lineItem.setMetrics(metrics);
 
-				countries.add(countryCode);
-				indicatorCodes.add(indicatorCode);
+					lines.add(lineItem);
+
+					countries.add(countryCode);
+					indicatorCodes.add(indicatorCode);
+
+				} 
 
 			}
 
-		}
-
-		csvReader.close();
+			csvReader.close();
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new InvalidFileException(e);
+		} 
 
 		return lines;
 

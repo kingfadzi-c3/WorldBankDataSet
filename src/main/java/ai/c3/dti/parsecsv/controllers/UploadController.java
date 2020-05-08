@@ -4,18 +4,24 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.opencsv.exceptions.CsvValidationException;
-
+import ai.c3.dti.parsecsv.processors.InvalidFileException;
 import ai.c3.dti.parsecsv.processors.LineItem;
 import ai.c3.dti.parsecsv.processors.NewLineItem;
 import ai.c3.dti.parsecsv.processors.ParseWBFile;
@@ -28,8 +34,32 @@ public class UploadController {
 		return "index";
 	}
 
+	@RequestMapping("/csv")
+	public void downloadCSV(HttpServletRequest request, HttpServletResponse response,
+			@RequestParam("fileName") String fileName) {
+
+		String dataDirectory = request.getServletContext().getContextPath();
+		
+		System.out.println("dataDirectory: "+dataDirectory);
+		
+		Path file = Paths.get(dataDirectory, fileName);
+		if (Files.exists(file)) {
+			response.setContentType("text/csv");
+			response.addHeader("Content-Disposition", "attachment; filename=" + fileName);
+			try {
+				Files.copy(file, response.getOutputStream());
+				response.getOutputStream().flush();
+			} catch (IOException ex) {
+				throw new RuntimeException(ex);
+			}
+		} else {
+			throw new RuntimeException("file not found: "+file.getFileName());
+		}
+	}
+	
+	
 	@PostMapping("/upload-csv-file")
-	public String uploadCSVFile(@RequestParam("file") MultipartFile file, Model model) {
+	public String uploadCSVFile(@RequestParam("file") MultipartFile file, Model model) throws Exception {
 
 		// validate file
 		if (file.isEmpty()) {
@@ -59,19 +89,12 @@ public class UploadController {
 
 				System.out.println("completed parse.csvWriterAll(stringArray, \"out.csv\");");
 
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (CsvValidationException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			} catch (InvalidFileException e) {
+				throw new RuntimeException("Sorry that is an invalid file",e);
+			} 
 
-			model.addAttribute("status", true);
-			model.addAttribute("download", file.getOriginalFilename().concat("_PROCESSED.csv"));
+			model.addAttribute("status", "Successed");
+			model.addAttribute("fileName", file.getOriginalFilename().concat("_PROCESSED.csv"));
 
 		}
 
